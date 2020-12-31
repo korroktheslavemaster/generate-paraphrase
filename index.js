@@ -15,7 +15,7 @@ app.set("port", process.env.PORT || 3001);
 
 /// pg stuff
 const client = new Client({
-    connectionString: 'postgres://postgres:postgres@192.168.0.198' //process.env.DATABASE_URL
+    connectionString: process.env.DATABASE_URL
 });
 client.connect();
 pgInit = async () => {
