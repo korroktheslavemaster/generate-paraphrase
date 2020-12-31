@@ -15,7 +15,7 @@ app.set("port", process.env.PORT || 3001);
 
 /// pg stuff
 const client = new Client({
-    connectionString: process.env.DATABASE_URL
+    connectionString: 'postgres://postgres:postgres@192.168.0.198' //process.env.DATABASE_URL
 });
 client.connect();
 pgInit = async () => {
@@ -27,17 +27,38 @@ pgInit()
 
 app.get('/api/randomOriginal', (req, res) => {
     // select originals.id, originals.text count(*) from originals, paraphrases where originals.id = paraphrases.original_id group by originals.id order by count limit 1;
-    client.query("select originals.id, originals.text, paraphrases.text as paraphrase from paraphrases, originals where original_id = originals.id and original_id in (select id from originals order by random() limit 1);", (err, res2) => {
+    query = 'select question, required_words from original order by random() limit 1;'
+    client.query(query, (err, res2) => {
         if (err) {
             res.send({error: err.message});
         } else {
             if (res2.rowCount != 0) {
                 const {rows} = res2;
-                res.send({
-                    id: rows[0].id,
-                    text: rows[0].text,
-                    paraphrases: rows.map(({paraphrase}) => paraphrase)
-                });
+                req_words = rows[0].required_words.split(',');
+                question = rows[0].question
+                for (var i = 0; i < req_words.length; i++) {
+                    req_words[i] = req_words[i].trim()
+                }
+                // get paraphrases for this question?
+                query = 'select paraphrase from paraphrase where question=' + '\'' + rows[0].question + '\';';
+                client.query(query, (err, res3) => {
+                    if (err) {
+                        res.send({error: err.message});
+                    } else {
+                        paraphrases = ['None yet :(']
+                        if (res3.rowCount != 0) {
+                            const {rows} = res3;
+                            paraphrases = rows.map(({paraphrase}) => paraphrase)
+                        }
+                        res.send({
+                            id: 0,
+                            text: question,
+                            required_words: req_words,
+                            paraphrases: paraphrases //rows.map(({paraphrase}) => paraphrase)
+                        });
+                    }
+                })
+                
             } else {
                 res.send({error: "no rows"});
             }
@@ -46,8 +67,10 @@ app.get('/api/randomOriginal', (req, res) => {
 })
 
 app.post('/api/paraphrase', (req, res) => {
-    const {original_id, text} = req.body;
-    client.query(`INSERT INTO paraphrases (text, original_id) values ('${text}', ${original_id});`)
+    const {question, paraphrase} = req.body;
+    var query = `INSERT INTO paraphrase (question, paraphrase) values ('${question}', '${paraphrase}');`
+    console.log(query)
+    client.query(query)
         .then(res2 => res.send(res2.rows))
         .catch(err => res.send({error: err}))
 })
