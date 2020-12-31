@@ -26,12 +26,18 @@ pgInit()
 ///
 
 app.get('/api/randomOriginal', (req, res) => {
-    client.query("SELECT * from originals order by random() limit 1;", (err, res2) => {
+    // select originals.id, originals.text count(*) from originals, paraphrases where originals.id = paraphrases.original_id group by originals.id order by count limit 1;
+    client.query("select originals.id, originals.text, paraphrases.text as paraphrase from paraphrases, originals where original_id = originals.id and original_id in (select id from originals order by random() limit 1);", (err, res2) => {
         if (err) {
-            res.send({error: err});
+            res.send({error: err.message});
         } else {
-            if (res2.rowCount == 1) {
-                res.send(res2.rows[0]);
+            if (res2.rowCount != 0) {
+                const {rows} = res2;
+                res.send({
+                    id: rows[0].id,
+                    text: rows[0].text,
+                    paraphrases: rows.map(({paraphrase}) => paraphrase)
+                });
             } else {
                 res.send({error: "no rows"});
             }
