@@ -94,6 +94,8 @@ class App extends Component {
           <b>Example</b>: <br></br>
           Original: Who was the <font color='red'>POTUS</font> before <font color='red'>Obama</font> <br></br>
           Paraphrase: Which person was the POTUS before Obama
+          <br></br>
+          Even 1 or 2 words difference is enough to call a sentence a paraphrase.
           </font>
         </p>
         <h2>Paraphrases done this session: {this.state.count}. Thanks!</h2>
